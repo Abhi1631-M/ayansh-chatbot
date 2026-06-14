@@ -329,6 +329,11 @@ async def admin_get_products():
 @app.post("/api/admin/products", dependencies=[Depends(_require_auth)])
 async def admin_add_product(product: ProductModel):
     """Add a new product."""
+    
+    # Auto-generate keywords so the Chatbot can always find it!
+    if not product.keywords:
+        product.keywords = f"{product.name} {product.brand} {product.category}".lower()
+        
     conn = get_connection()
     try:
         conn.execute(
