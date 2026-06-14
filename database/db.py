@@ -163,3 +163,43 @@ def get_all_leads() -> list[dict]:
         return [dict(row) for row in cur.fetchall()]
     finally:
         conn.close()
+
+
+def get_whatsapp_history(phone_number: str) -> list[dict]:
+    """Fetch chat history for a specific WhatsApp phone number."""
+    conn = get_connection()
+    try:
+        cur = _dict_cursor(conn)
+        cur.execute("SELECT history FROM whatsapp_sessions WHERE phone_number = %s", (phone_number,))
+        row = cur.fetchone()
+        if row and row['history']:
+            return row['history']
+        return []
+    except Exception as e:
+        print(f"Error getting whatsapp history: {e}")
+        return []
+    finally:
+        conn.close()
+
+
+def update_whatsapp_history(phone_number: str, history: list[dict]):
+    """Update or insert chat history for a specific WhatsApp phone number."""
+    import json
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        history_json = json.dumps(history)
+        cur.execute(
+            """
+            INSERT INTO whatsapp_sessions (phone_number, history, updated_at) 
+            VALUES (%s, %s, CURRENT_TIMESTAMP)
+            ON CONFLICT (phone_number) 
+            DO UPDATE SET history = EXCLUDED.history, updated_at = CURRENT_TIMESTAMP
+            """,
+            (phone_number, history_json)
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"Error updating whatsapp history: {e}")
+    finally:
+        conn.close()

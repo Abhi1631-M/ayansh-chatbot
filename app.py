@@ -25,7 +25,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Request, HTTPException, Depends
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from pydantic import BaseModel
@@ -173,76 +173,82 @@ async def chat_endpoint(request: Request):
         )
 
 # ═══════════════════════════════════════════════════════════
-#  WHATSAPP WEBHOOK
+#  WHATSAPP WEBHOOK (TWILIO)
 # ═══════════════════════════════════════════════════════════
 
-@app.get("/api/webhook/whatsapp")
-async def verify_whatsapp_webhook(request: Request):
-    """Handle Meta's webhook verification challenge."""
-    mode = request.query_params.get("hub.mode")
-    token = request.query_params.get("hub.verify_token")
-    challenge = request.query_params.get("hub.challenge")
+@app.post("/api/whatsapp")
+async def whatsapp_endpoint(request: Request):
+    """Process incoming WhatsApp messages from Twilio."""
+    body = await request.form()
+    user_message = body.get("Body", "").strip()
+    phone_number = body.get("From", "").strip()
 
-    verify_token = os.getenv("WHATSAPP_VERIFY_TOKEN")
+    if not user_message:
+        return Response(content="<Response></Response>", media_type="application/xml")
 
-    if mode == "subscribe" and token == verify_token:
-        # FastAPI handles returning plain ints well, but Meta expects raw text
-        from fastapi.responses import PlainTextResponse
-        return PlainTextResponse(content=str(challenge))
-    raise HTTPException(status_code=403, detail="Forbidden")
-
-
-@app.post("/api/webhook/whatsapp")
-async def handle_whatsapp_message(request: Request):
-    """Receive messages from WhatsApp and reply via LangGraph."""
-    body = await request.json()
+    from database.db import get_whatsapp_history, update_whatsapp_history
+    chat_history = get_whatsapp_history(phone_number)
 
     try:
-        entry = body.get("entry", [])[0]
-        changes = entry.get("changes", [])[0]
-        value = changes.get("value", {})
-        messages = value.get("messages", [])
+        result = chatbot_graph.invoke({
+            "user_input": user_message,
+            "chat_history": chat_history,
+            "retrieved_context": "",
+            "router_decision": "",
+            "final_response": "",
+        })
+
+        response_text = result.get("final_response", "Sorry, I couldn't generate a response.")
+        route_taken = result.get("router_decision", "unknown")
+
+        # Intercept Lead Capture JSON
+        import re
+        from database.db import save_lead
         
-        if not messages:
-            return JSONResponse(content={"status": "ignored"})
-            
-        message = messages[0]
-        phone_number = message["from"]
-        text = message.get("text", {}).get("body", "").strip()
-
-        if text:
-            # Run LangGraph pipeline
-            result = chatbot_graph.invoke({
-                "user_input": text,
-                "retrieved_context": "",
-                "router_decision": "",
-                "final_response": "",
-            })
-            
-            response_text = result.get("final_response", "Sorry, I couldn't generate a response.")
-            route_taken = result.get("router_decision", "whatsapp")
-
-            # Log to DB
+        lead_match = re.search(r"\[LEAD_CAPTURE\](.*?)\[/LEAD_CAPTURE\]", response_text, re.DOTALL)
+        if lead_match:
             try:
-                conn = get_connection()
-                cur = conn.cursor()
-                cur.execute(
-                    "INSERT INTO chat_logs (user_query, bot_response, route_decision) VALUES (%s, %s, %s)",
-                    (text, response_text, f"WA: {route_taken}")
+                import json
+                lead_data = json.loads(lead_match.group(1).strip())
+                save_lead(
+                    customer_name=lead_data.get("name", "Unknown"),
+                    contact_info=lead_data.get("phone", "Unknown"),
+                    product_interest=lead_data.get("product", "Unknown")
                 )
-                conn.commit()
-                conn.close()
-            except Exception as log_e:
-                print(f"Error logging WA chat: {log_e}")
+                # Remove the block from the user's visible text
+                response_text = re.sub(r"\[LEAD_CAPTURE\].*?\[/LEAD_CAPTURE\]", "", response_text, flags=re.DOTALL).strip()
+            except Exception as e:
+                print(f"Error parsing lead capture data: {e}")
 
-            # Send back to WhatsApp
-            from tools.whatsapp import send_whatsapp_message
-            send_whatsapp_message(phone_number, response_text)
+        # Update History
+        chat_history.append({"role": "user", "content": user_message})
+        chat_history.append({"role": "assistant", "content": response_text})
+        if len(chat_history) > 10:
+            chat_history = chat_history[-10:]
+        update_whatsapp_history(phone_number, chat_history)
 
-        return JSONResponse(content={"status": "ok"})
+        # Log to Supabase PostgreSQL
+        try:
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO chat_logs (user_query, bot_response, route_decision) VALUES (%s, %s, %s)",
+                (f"[WA] {user_message}", response_text, route_taken)
+            )
+            conn.commit()
+            conn.close()
+        except Exception as log_e:
+            print(f"Error logging WA chat to DB: {log_e}")
+
+        # Return TwiML XML
+        xml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Message>{response_text}</Message>
+</Response>"""
+        return Response(content=xml_response, media_type="application/xml")
     except Exception as e:
-        print(f"WhatsApp Webhook Error: {e}")
-        return JSONResponse(content={"status": "error"}, status_code=500)
+        print(f"Error processing WhatsApp message: {e}")
+        return Response(content="<Response></Response>", media_type="application/xml")
 
 
 

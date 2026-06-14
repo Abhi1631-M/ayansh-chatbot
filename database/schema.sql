@@ -12,6 +12,13 @@ CREATE TABLE IF NOT EXISTS leads (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- WhatsApp Sessions Table (Chat History)
+CREATE TABLE IF NOT EXISTS whatsapp_sessions (
+    phone_number TEXT PRIMARY KEY,
+    history JSONB NOT NULL DEFAULT '[]',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Products Table
 CREATE TABLE IF NOT EXISTS products (
     id                    SERIAL PRIMARY KEY,
