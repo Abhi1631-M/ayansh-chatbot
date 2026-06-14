@@ -243,7 +243,7 @@ async def whatsapp_endpoint(request: Request):
         # Return TwiML XML
         xml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Message>{response_text}</Message>
+    <Message><![CDATA[{response_text}]]></Message>
 </Response>"""
         return Response(content=xml_response, media_type="application/xml")
     except Exception as e:
