@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Ayansh Infocom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── CSS Variables ──────────────────────────────── */
+    :root {
+      --bg:          #0a0e1a;
+      --bg2:         #111827;
+      --bg3:         #1a2236;
+      --glass:       rgba(17,24,39,0.75);
+      --border:      rgba(99,128,255,0.15);
+      --border2:     rgba(255,255,255,0.06);
+      --accent:      #6366f1;
+      --accent2:     #8b5cf6;
+      --grad:        linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);
+      --glow:        rgba(99,102,241,0.25);
+      --text:        #f1f5f9;
+      --text2:       #94a3b8;
+      --text3:       #64748b;
+      --green:       #22c55e;
+      --red:         #ef4444;
+      --amber:       #f59e0b;
+      --r-sm:        8px;
+      --r-md:        12px;
+      --r-lg:        18px;
+      --shadow:      0 8px 32px rgba(0,0,0,0.35);
+      --t:           0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html,body{min-height:100%;background:var(--bg);color:var(--text);
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+      -webkit-font-smoothing:antialiased;}
+
+    /* ── Animated bg blobs ─────────────────────────── */
+    .blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0;}
+    .blob1{width:500px;height:500px;top:-150px;right:-100px;
+      background:radial-gradient(circle,rgba(99,102,241,0.07),transparent 70%);
+      animation:blob-move 20s ease-in-out infinite;}
+    .blob2{width:400px;height:400px;bottom:-120px;left:-80px;
+      background:radial-gradient(circle,rgba(139,92,246,0.06),transparent 70%);
+      animation:blob-move 26s ease-in-out infinite reverse;}
+    @keyframes blob-move{
+      0%,100%{transform:translate(0,0) scale(1);}
+      33%{transform:translate(20px,-20px) scale(1.04);}
+      66%{transform:translate(-15px,15px) scale(0.96);}
+    }
+
+    /* ── Layout ────────────────────────────────────── */
+    .layout{position:relative;z-index:1;display:flex;min-height:100vh;}
+
+    /* ── Sidebar ───────────────────────────────────── */
+    .sidebar{
+      width:240px;flex-shrink:0;padding:24px 16px;
+      background:var(--glass);backdrop-filter:blur(20px);
+      border-right:1px solid var(--border);
+      display:flex;flex-direction:column;gap:8px;
+      position:sticky;top:0;height:100vh;overflow-y:auto;
+    }
+    .sidebar-logo{
+      display:flex;align-items:center;gap:12px;
+      padding:12px;margin-bottom:12px;
+    }
+    .logo-icon{
+      width:42px;height:42px;border-radius:var(--r-md);
+      background:var(--grad);display:flex;align-items:center;
+      justify-content:center;font-size:18px;font-weight:700;
+      color:white;box-shadow:0 4px 16px var(--glow);flex-shrink:0;
+    }
+    .logo-text{font-size:13px;font-weight:700;line-height:1.3;}
+    .logo-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+    .nav-section{font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+      color:var(--text3);padding:8px 12px 4px;font-weight:600;}
+    .nav-item{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 14px;border-radius:var(--r-sm);cursor:pointer;
+      font-size:13px;font-weight:500;color:var(--text2);
+      transition:all var(--t);border:1px solid transparent;
+    }
+    .nav-item:hover{background:rgba(99,102,241,0.08);color:var(--text);
+      border-color:rgba(99,102,241,0.15);}
+    .nav-item.active{background:rgba(99,102,241,0.15);color:var(--accent);
+      border-color:rgba(99,102,241,0.25);}
+    .nav-item .icon{font-size:16px;width:20px;text-align:center;}
+    .nav-badge{margin-left:auto;background:var(--accent);color:white;
+      font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px;}
+    .sidebar-footer{margin-top:auto;padding-top:16px;border-top:1px solid var(--border2);}
+    .chat-link{
+      display:flex;align-items:center;gap:8px;padding:10px 14px;
+      border-radius:var(--r-sm);background:rgba(99,102,241,0.1);
+      color:var(--accent);font-size:13px;font-weight:500;
+      text-decoration:none;transition:all var(--t);
+    }
+    .chat-link:hover{background:rgba(99,102,241,0.18);}
+
+    /* ── Main content ──────────────────────────────── */
+    .main{flex:1;padding:28px 32px;overflow-x:hidden;}
+
+    /* ── Page header ───────────────────────────────── */
+    .page-header{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:28px;
+    }
+    .page-title{font-size:22px;font-weight:700;letter-spacing:-.02em;}
+    .page-sub{font-size:13px;color:var(--text2);margin-top:3px;}
+
+    /* ── Stats row ─────────────────────────────────── */
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px;}
+    .stat-card{
+      padding:20px;border-radius:var(--r-lg);
+      background:var(--glass);backdrop-filter:blur(12px);
+      border:1px solid var(--border);
+    }
+    .stat-value{font-size:28px;font-weight:700;letter-spacing:-.03em;}
+    .stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
+    .stat-icon{font-size:22px;margin-bottom:8px;}
+
+    /* ── Section ───────────────────────────────────── */
+    .section{display:none;}
+    .section.active{display:block;}
+
+    /* ── Card ──────────────────────────────────────── */
+    .card{
+      background:var(--glass);backdrop-filter:blur(16px);
+      border:1px solid var(--border);border-radius:var(--r-lg);
+      margin-bottom:20px;overflow:hidden;
+    }
+    .card-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 24px;border-bottom:1px solid var(--border2);
+    }
+    .card-title{font-size:15px;font-weight:600;}
+    .card-body{padding:24px;}
+
+    /* ── Buttons ───────────────────────────────────── */
+    .btn{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:9px 18px;border-radius:var(--r-sm);font-size:13px;
+      font-weight:600;cursor:pointer;border:none;
+      font-family:'Inter',sans-serif;transition:all var(--t);
+    }
+    .btn-primary{background:var(--grad);color:white;
+      box-shadow:0 4px 16px var(--glow);}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px var(--glow);}
+    .btn-danger{background:rgba(239,68,68,0.12);color:var(--red);
+      border:1px solid rgba(239,68,68,0.2);}
+    .btn-danger:hover{background:rgba(239,68,68,0.2);}
+    .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text2);
+      border:1px solid var(--border2);}
+    .btn-secondary:hover{background:rgba(255,255,255,0.1);color:var(--text);}
+    .btn-sm{padding:6px 13px;font-size:12px;}
+    .btn-icon{width:34px;height:34px;padding:0;justify-content:center;
+      border-radius:var(--r-sm);}
+
+    /* ── Table ─────────────────────────────────────── */
+    .table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;}
+    th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--text3);padding:10px 16px;border-bottom:1px solid var(--border2);
+      font-weight:600;}
+    td{padding:14px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03);}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:rgba(99,102,241,0.04);}
+    .td-name{font-weight:600;color:var(--text);}
+    .td-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+    .price{font-weight:600;color:#34d399;}
+    .stock-good{color:var(--green);font-weight:600;}
+    .stock-none{color:var(--red);font-weight:600;}
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;
+      border-radius:100px;font-size:11px;font-weight:600;}
+    .badge-offer{background:rgba(245,158,11,0.1);color:var(--amber);
+      border:1px solid rgba(245,158,11,0.2);}
+    .badge-none{background:rgba(100,116,139,0.1);color:var(--text3);
+      border:1px solid var(--border2);}
+    .actions{display:flex;gap:6px;}
+
+    /* ── Form ──────────────────────────────────────── */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-grid.cols-1{grid-template-columns:1fr;}
+    .form-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+    .form-full{grid-column:1/-1;}
+    .field{display:flex;flex-direction:column;gap:6px;}
+    label{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.02em;}
+    input,select,textarea{
+      background:rgba(255,255,255,0.04);border:1px solid var(--border2);
+      color:var(--text);border-radius:var(--r-sm);padding:10px 14px;
+      font-size:13px;font-family:'Inter',sans-serif;
+      transition:border-color var(--t),box-shadow var(--t);
+    }
+    input:focus,select:focus,textarea:focus{
+      outline:none;border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(99,102,241,0.12);
+    }
+    select option{background:var(--bg2);}
+    textarea{resize:vertical;min-height:90px;}
+    .hint{font-size:11px;color:var(--text3);margin-top:2px;}
+
+    /* ── Modal ─────────────────────────────────────── */
+    .modal-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,0.6);
+      backdrop-filter:blur(6px);z-index:100;
+      display:none;align-items:center;justify-content:center;padding:20px;
+    }
+    .modal-overlay.open{display:flex;}
+    .modal{
+      background:var(--bg2);border:1px solid var(--border);
+      border-radius:var(--r-lg);width:100%;max-width:640px;
+      max-height:90vh;overflow-y:auto;
+      box-shadow:0 24px 80px rgba(0,0,0,0.5);
+      animation:modal-in .25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modal-in{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+    .modal-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:20px 24px;border-bottom:1px solid var(--border2);
+    }
+    .modal-title{font-size:16px;font-weight:700;}
+    .modal-close{
+      width:32px;height:32px;border-radius:var(--r-sm);border:none;
+      background:rgba(255,255,255,0.06);color:var(--text2);
+      cursor:pointer;font-size:18px;display:flex;align-items:center;
+      justify-content:center;transition:all var(--t);
+    }
+    .modal-close:hover{background:rgba(239,68,68,0.15);color:var(--red);}
+    .modal-body{padding:24px;}
+    .modal-footer{
+      display:flex;justify-content:flex-end;gap:10px;
+      padding:16px 24px;border-top:1px solid var(--border2);
+    }
+
+    /* ── Toast ─────────────────────────────────────── */
+    .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+    .toast{
+      padding:13px 18px;border-radius:var(--r-md);font-size:13px;font-weight:500;
+      color:white;min-width:220px;backdrop-filter:blur(12px);
+      animation:toast-in .3s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:var(--shadow);
+    }
+    .toast-success{background:rgba(22,163,74,0.9);border:1px solid rgba(34,197,94,0.3);}
+    .toast-error{background:rgba(185,28,28,0.9);border:1px solid rgba(239,68,68,0.3);}
+    @keyframes toast-in{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+
+    /* ── Empty state ───────────────────────────────── */
+    .empty{text-align:center;padding:48px 24px;color:var(--text3);}
+    .empty-icon{font-size:40px;margin-bottom:12px;}
+    .empty p{font-size:14px;}
+
+    /* ── Loading ───────────────────────────────────── */
+    .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);
+      border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    @media(max-width:768px){
+      .sidebar{display:none;}
+      .main{padding:16px;}
+      .form-grid{grid-template-columns:1fr;}
+      .form-grid.cols-3{grid-template-columns:1fr 1fr;}
+    }
+  </style>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<div class="layout">
+  <!-- ── Sidebar ─────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">A</div>
+      <div>
+        <div class="logo-text">Ayansh Infocom</div>
+        <div class="logo-sub">Admin Panel</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Manage</div>
+    <div class="nav-item active" onclick="showSection('products',this)" id="nav-products">
+      <span class="icon">📦</span> Products
+      <span class="nav-badge" id="products-count">—</span>
+    </div>
+    <div class="nav-item" onclick="showSection('knowledge',this)" id="nav-knowledge">
+      <span class="icon">🧠</span> Knowledge Base
+      <span class="nav-badge" id="knowledge-count">—</span>
+    </div>
+    <div class="nav-section">Analytics</div>
+    <div class="nav-item" onclick="showSection('logs',this)" id="nav-logs">
+      <span class="icon">📊</span> Chat Logs
+    </div>
+
+    <div class="sidebar-footer">
+      <a class="chat-link" href="/">
+        <span>💬</span> Open Chat UI
+      </a>
+      <div style="margin-top:8px;">
+        <button class="btn btn-danger btn-sm" style="width:100%;justify-content:center;" onclick="logout()">
+          🚪 Logout
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stats" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value" id="stat-products">—</div>
+        <div class="stat-label">Total Products</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="stat-instock">—</div>
+        <div class="stat-label">In Stock</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏷️</div>
+        <div class="stat-value" id="stat-offers">—</div>
+        <div class="stat-label">Active Offers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🧠</div>
+        <div class="stat-value" id="stat-chunks">—</div>
+        <div class="stat-label">Knowledge Chunks</div>
+      </div>
+    </div>
+
+    <!-- ── PRODUCTS SECTION ─────────────────────── -->
+    <div class="section active" id="section-products">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Products</div>
+          <div class="page-sub">Manage your product catalogue and inventory</div>
+        </div>
+        <button class="btn btn-primary" onclick="openProductModal()">
+          ＋ Add Product
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Products</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadProducts()">⟳ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price (₹)</th>
+                <th>Stock</th>
+                <th>Offer</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody">
+              <tr><td colspan="6"><div class="empty"><div class="spinner"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── KNOWLEDGE SECTION ────────────────────── -->
+    <div class="section" id="section-knowledge">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Knowledge Base</div>
+          <div class="page-sub">Manage FAQ entries and product specifications</div>
+        </div>
+        <button class="btn btn-primary" onclick="openChunkModal()">
+          ＋ Add Entry
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Knowledge Chunks</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadKnowledge()">⟳ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Keywords</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="knowledge-tbody">
+              <tr><td colspan="4"><div class="empty"><div class="spinner"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- ── CHAT LOGS SECTION ──────────────────────── -->
+    <div class="section" id="section-logs">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Chat Logs</div>
+          <div class="page-sub">View recent conversations with the chatbot</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Interactions</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadChatLogs()">⟳ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th style="width: 30%">User Query</th>
+                <th style="width: 40%">Bot Response</th>
+                <th>Route Taken</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody">
+              <tr><td colspan="4"><div class="empty"><div class="spinner"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!--   PRODUCT MODAL                                       -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="product-modal-title">Add Product</div>
+      <button class="modal-close" onclick="closeModal('product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="p-edit-id" />
+      <div class="form-grid">
+        <div class="field">
+          <label>Product ID *</label>
+          <input id="p-product_id" placeholder="e.g. FG-40F-WIFI" />
+          <div class="hint">Unique code — no spaces</div>
+        </div>
+        <div class="field">
+          <label>Brand *</label>
+          <input id="p-brand" placeholder="e.g. Fortinet" />
+        </div>
+        <div class="field form-full">
+          <label>Product Name *</label>
+          <input id="p-name" placeholder="e.g. FortiGate FortiWifi 40F" />
+        </div>
+        <div class="field">
+          <label>Category *</label>
+          <select id="p-category">
+            <option value="">Select…</option>
+            <option>Server Racks</option>
+            <option>Wall Mount Racks</option>
+            <option>Network Firewalls</option>
+            <option>Network Switches</option>
+            <option>Routerboards & Routers</option>
+            <option>WiFi Routers</option>
+            <option>Wireless Network Equipment</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Price (₹) *</label>
+          <input id="p-unit_price_inr" type="number" placeholder="e.g. 80000" />
+        </div>
+        <div class="field">
+          <label>Stock Quantity *</label>
+          <input id="p-stock_qty" type="number" placeholder="e.g. 10" />
+        </div>
+        <div class="field">
+          <label>Warehouse</label>
+          <input id="p-warehouse" placeholder="e.g. Delhi Warehouse" />
+        </div>
+        <div class="field">
+          <label>Weight (kg)</label>
+          <input id="p-weight_kg" type="number" step="0.1" placeholder="e.g. 1.5" />
+        </div>
+        <div class="field">
+          <label>Std. Shipping Days</label>
+          <input id="p-std_shipping_days" type="number" value="5" />
+        </div>
+        <div class="field">
+          <label>Express Shipping Days</label>
+          <input id="p-exp_shipping_days" type="number" value="2" />
+        </div>
+        <div class="field">
+          <label>Express Surcharge (₹)</label>
+          <input id="p-exp_surcharge_inr" type="number" value="0" />
+        </div>
+        <div class="field">
+          <label>Restock Date</label>
+          <input id="p-restock_date" type="date" />
+        </div>
+        <div class="field form-full">
+          <label>Alternative Product (if out of stock)</label>
+          <input id="p-alternative_product" placeholder="e.g. TP-Link 24-Port Switch (In stock)" />
+        </div>
+        <div class="field form-full">
+          <label>Keywords *</label>
+          <input id="p-keywords" placeholder="e.g. fortigate,firewall,40f,network firewall" />
+          <div class="hint">Comma-separated — used by chatbot to match this product</div>
+        </div>
+      </div>
+
+      <!-- Offer sub-section -->
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-size:14px;font-weight:600;">🏷️ Promotional Offer <span style="font-size:11px;color:var(--text3);font-weight:400;">(optional)</span></div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text2);">
+            <input type="checkbox" id="offer-enabled" onchange="toggleOffer()" /> Enable Offer
+          </label>
+        </div>
+        <div id="offer-fields" style="display:none;">
+          <div class="form-grid cols-3">
+            <div class="field">
+              <label>Coupon Code</label>
+              <input id="o-code" placeholder="e.g. RACK10" />
+            </div>
+            <div class="field">
+              <label>Discount %</label>
+              <input id="o-discount_pct" type="number" step="0.01" min="0" max="1" placeholder="e.g. 0.10 = 10%" />
+            </div>
+            <div class="field">
+              <label>Valid Until</label>
+              <input id="o-valid_until" type="date" />
+            </div>
+            <div class="field form-full">
+              <label>Offer Description</label>
+              <input id="o-description" placeholder="e.g. 10% off all server racks" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('product-modal')">Cancel</button>
+      <button class="btn btn-primary" id="product-save-btn" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!--   KNOWLEDGE MODAL                                     -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="knowledge-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="knowledge-modal-title">Add Knowledge Entry</div>
+      <button class="modal-close" onclick="closeModal('knowledge-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="k-edit-id" />
+      <div class="form-grid">
+        <div class="field">
+          <label>Category *</label>
+          <input id="k-category" placeholder="e.g. general_faq" />
+          <div class="hint">Slug-style, no spaces</div>
+        </div>
+        <div class="field">
+          <label>Keywords *</label>
+          <input id="k-keywords" placeholder="e.g. return,refund,policy" />
+          <div class="hint">Comma-separated trigger words</div>
+        </div>
+        <div class="field form-full">
+          <label>Title *</label>
+          <input id="k-title" placeholder="e.g. Return & Refund Policy" />
+        </div>
+        <div class="field form-full">
+          <label>Content *</label>
+          <textarea id="k-content" rows="6" placeholder="Enter detailed content…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('knowledge-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveChunk()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast Container ──────────────────────────────────── -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+let _products = [];
+let _chunks   = [];
+
+// ── Navigation ─────────────────────────────────────────────
+function showSection(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── Toast ──────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ── Modal ──────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+
+// ── Format helpers ─────────────────────────────────────────
+const inr = n => '₹' + Number(n).toLocaleString('en-IN');
+
+// ══════════════════════════════════════════════════════════
+//  PRODUCTS
+// ══════════════════════════════════════════════════════════
+
+async function loadProducts() {
+  const res  = await authFetch('/api/admin/products');
+  const data = await res.json();
+  _products  = data.products || [];
+
+  // Update stats
+  document.getElementById('stat-products').textContent = _products.length;
+  document.getElementById('stat-instock').textContent  = _products.filter(p => p.stock_qty > 0).length;
+  document.getElementById('stat-offers').textContent   = _products.filter(p => p.offer).length;
+  document.getElementById('products-count').textContent = _products.length;
+
+  const tbody = document.getElementById('products-tbody');
+  if (!_products.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div><p>No products yet. Add one!</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = _products.map(p => `
+    <tr>
+      <td>
+        <div class="td-name">${p.name}</div>
+        <div class="td-sub">${p.product_id} · ${p.brand}</div>
+      </td>
+      <td><span style="color:var(--text2);font-size:12px;">${p.category}</span></td>
+      <td><span class="price">${inr(p.unit_price_inr)}</span></td>
+      <td class="${p.stock_qty > 0 ? 'stock-good' : 'stock-none'}">
+        ${p.stock_qty > 0 ? p.stock_qty + ' units' : 'Out of Stock'}
+      </td>
+      <td>${p.offer
+        ? `<span class="badge badge-offer">🏷 ${p.offer.code}</span>`
+        : `<span class="badge badge-none">None</span>`}
+      </td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-secondary btn-sm btn-icon" title="Edit" onclick="editProduct('${p.product_id}')">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Delete" onclick="deleteProduct('${p.product_id}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openProductModal(productId) {
+  document.getElementById('product-modal-title').textContent = productId ? 'Edit Product' : 'Add Product';
+  document.getElementById('p-edit-id').value = productId || '';
+
+  if (!productId) {
+    // Clear form
+    ['product_id','name','brand','category','unit_price_inr','stock_qty',
+     'warehouse','weight_kg','restock_date','alternative_product','keywords'].forEach(f => {
+      const el = document.getElementById('p-' + f);
+      if (el) { el.value = f === 'unit_price_inr' ? '' : (f === 'stock_qty' ? '' : ''); }
+    });
+    document.getElementById('p-std_shipping_days').value = 5;
+    document.getElementById('p-exp_shipping_days').value = 2;
+    document.getElementById('p-exp_surcharge_inr').value = 0;
+    document.getElementById('offer-enabled').checked = false;
+    document.getElementById('offer-fields').style.display = 'none';
+    ['code','discount_pct','valid_until','description'].forEach(f => {
+      document.getElementById('o-' + f).value = '';
+    });
+    document.getElementById('p-product_id').disabled = false;
+  }
+  openModal('product-modal');
+}
+
+function editProduct(productId) {
+  const p = _products.find(x => x.product_id === productId);
+  if (!p) return;
+
+  document.getElementById('product-modal-title').textContent = 'Edit Product';
+  document.getElementById('p-edit-id').value = productId;
+
+  document.getElementById('p-product_id').value        = p.product_id;
+  document.getElementById('p-product_id').disabled     = true;
+  document.getElementById('p-name').value              = p.name || '';
+  document.getElementById('p-brand').value             = p.brand || '';
+  document.getElementById('p-category').value          = p.category || '';
+  document.getElementById('p-unit_price_inr').value    = p.unit_price_inr || '';
+  document.getElementById('p-stock_qty').value         = p.stock_qty ?? '';
+  document.getElementById('p-warehouse').value         = p.warehouse || '';
+  document.getElementById('p-weight_kg').value         = p.weight_kg || '';
+  document.getElementById('p-std_shipping_days').value = p.std_shipping_days || 5;
+  document.getElementById('p-exp_shipping_days').value = p.exp_shipping_days || 2;
+  document.getElementById('p-exp_surcharge_inr').value = p.exp_surcharge_inr || 0;
+  document.getElementById('p-restock_date').value      = p.restock_date || '';
+  document.getElementById('p-alternative_product').value = p.alternative_product || '';
+  document.getElementById('p-keywords').value          = p.keywords || '';
+
+  const hasOffer = !!p.offer;
+  document.getElementById('offer-enabled').checked        = hasOffer;
+  document.getElementById('offer-fields').style.display   = hasOffer ? 'block' : 'none';
+  if (hasOffer) {
+    document.getElementById('o-code').value         = p.offer.code || '';
+    document.getElementById('o-discount_pct').value = p.offer.discount_pct || '';
+    document.getElementById('o-valid_until').value  = p.offer.valid_until || '';
+    document.getElementById('o-description').value  = p.offer.description || '';
+  }
+
+  openModal('product-modal');
+}
+
+function toggleOffer() {
+  const enabled = document.getElementById('offer-enabled').checked;
+  document.getElementById('offer-fields').style.display = enabled ? 'block' : 'none';
+}
+
+async function saveProduct() {
+  const editId = document.getElementById('p-edit-id').value;
+  const body = {
+    product_id:          document.getElementById('p-product_id').value.trim(),
+    name:                document.getElementById('p-name').value.trim(),
+    brand:               document.getElementById('p-brand').value.trim(),
+    category:            document.getElementById('p-category').value,
+    unit_price_inr:      parseFloat(document.getElementById('p-unit_price_inr').value) || 0,
+    stock_qty:           parseInt(document.getElementById('p-stock_qty').value) || 0,
+    warehouse:           document.getElementById('p-warehouse').value.trim(),
+    weight_kg:           parseFloat(document.getElementById('p-weight_kg').value) || null,
+    std_shipping_days:   parseInt(document.getElementById('p-std_shipping_days').value) || 5,
+    exp_shipping_days:   parseInt(document.getElementById('p-exp_shipping_days').value) || 2,
+    exp_surcharge_inr:   parseFloat(document.getElementById('p-exp_surcharge_inr').value) || 0,
+    restock_date:        document.getElementById('p-restock_date').value || null,
+    alternative_product: document.getElementById('p-alternative_product').value.trim() || null,
+    keywords:            document.getElementById('p-keywords').value.trim(),
+  };
+
+  if (!body.product_id || !body.name || !body.brand || !body.category) {
+    toast('Please fill in all required fields.', 'error'); return;
+  }
+
+  const btn = document.getElementById('product-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const url = editId ? `/api/admin/products/${editId}` : '/api/admin/products';
+    const method = editId ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error saving product');
+
+    // Handle offer
+    const offerId = editId || body.product_id;
+    const offerEnabled = document.getElementById('offer-enabled').checked;
+    if (offerEnabled) {
+      const offer = {
+        code:         document.getElementById('o-code').value.trim(),
+        discount_pct: parseFloat(document.getElementById('o-discount_pct').value) || 0,
+        valid_until:  document.getElementById('o-valid_until').value,
+        description:  document.getElementById('o-description').value.trim(),
+      };
+      await fetch(`/api/admin/products/${offerId}/offer`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(offer)
+      });
+    } else if (editId) {
+      await fetch(`/api/admin/products/${offerId}/offer`, { method:'DELETE' });
+    }
+
+    toast(editId ? 'Product updated!' : 'Product added!');
+    closeModal('product-modal');
+    loadProducts();
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Product';
+  }
+}
+
+async function deleteProduct(productId) {
+  if (!confirm(`Delete product "${productId}"?\nThis will also remove its offer.`)) return;
+  const res  = await fetch(`/api/admin/products/${productId}`, { method:'DELETE' });
+  const data = await res.json();
+  if (res.ok) { toast('Product deleted.'); loadProducts(); }
+  else toast(data.detail || 'Error deleting.', 'error');
+}
+
+// ══════════════════════════════════════════════════════════
+//  KNOWLEDGE CHUNKS
+// ══════════════════════════════════════════════════════════
+
+async function loadKnowledge() {
+  const res  = await authFetch('/api/admin/knowledge');
+  const data = await res.json();
+  _chunks = data.chunks || [];
+
+  document.getElementById('stat-chunks').textContent    = _chunks.length;
+  document.getElementById('knowledge-count').textContent = _chunks.length;
+
+  const tbody = document.getElementById('knowledge-tbody');
+  if (!_chunks.length) {
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="empty-icon">🧠</div><p>No entries yet.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = _chunks.map(c => `
+    <tr>
+      <td>
+        <div class="td-name" style="max-width:280px;">${c.title}</div>
+        <div class="td-sub" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          ${c.content.substring(0,80)}…
+        </div>
+      </td>
+      <td><span style="background:rgba(99,102,241,0.1);color:#a5b4fc;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;">${c.category}</span></td>
+      <td><span style="font-size:11px;color:var(--text3);">${(c.keywords||'').split(',').slice(0,3).join(', ')}</span></td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-secondary btn-sm btn-icon" title="Edit" onclick="editChunk(${c.id})">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Delete" onclick="deleteChunk(${c.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openChunkModal() {
+  document.getElementById('knowledge-modal-title').textContent = 'Add Knowledge Entry';
+  document.getElementById('k-edit-id').value = '';
+  ['category','title','content','keywords'].forEach(f => {
+    document.getElementById('k-' + f).value = '';
+  });
+  openModal('knowledge-modal');
+}
+
+function editChunk(id) {
+  const c = _chunks.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('knowledge-modal-title').textContent = 'Edit Knowledge Entry';
+  document.getElementById('k-edit-id').value   = id;
+  document.getElementById('k-category').value  = c.category || '';
+  document.getElementById('k-title').value     = c.title || '';
+  document.getElementById('k-content').value   = c.content || '';
+  document.getElementById('k-keywords').value  = c.keywords || '';
+  openModal('knowledge-modal');
+}
+
+async function saveChunk() {
+  const editId = document.getElementById('k-edit-id').value;
+  const body = {
+    category: document.getElementById('k-category').value.trim(),
+    title:    document.getElementById('k-title').value.trim(),
+    content:  document.getElementById('k-content').value.trim(),
+    keywords: document.getElementById('k-keywords').value.trim() || null,
+  };
+  if (!body.category || !body.title || !body.content) {
+    toast('Please fill in all required fields.', 'error'); return;
+  }
+
+  const url    = editId ? `/api/admin/knowledge/${editId}` : '/api/admin/knowledge';
+  const method = editId ? 'PUT' : 'POST';
+  const res    = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const data   = await res.json();
+  if (res.ok) { toast(editId ? 'Entry updated!' : 'Entry added!'); closeModal('knowledge-modal'); loadKnowledge(); }
+  else toast(data.detail || 'Error saving.', 'error');
+}
+
+async function deleteChunk(id) {
+  if (!confirm('Delete this knowledge entry?')) return;
+  const res  = await fetch(`/api/admin/knowledge/${id}`, { method:'DELETE' });
+  const data = await res.json();
+  if (res.ok) { toast('Entry deleted.'); loadKnowledge(); }
+  else toast(data.detail || 'Error deleting.', 'error');
+}
+
+// ══════════════════════════════════════════════════════════
+//  CHAT LOGS
+// ══════════════════════════════════════════════════════════
+
+async function loadChatLogs() {
+  const res  = await authFetch('/api/admin/chat-logs');
+  const data = await res.json();
+  const logs = data.logs || [];
+
+  const tbody = document.getElementById('logs-tbody');
+  if (!logs.length) {
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="empty-icon">📊</div><p>No chats recorded yet.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(l => {
+    const dt = new Date(l.timestamp + 'Z'); 
+    const timeStr = dt.toLocaleString(undefined, { 
+      month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' 
+    });
+    
+    let routeStyle = "background:rgba(100,116,139,0.1);color:var(--text3);";
+    if (l.route_decision === "inventory_api") routeStyle = "background:rgba(34,197,94,0.1);color:var(--green);";
+    if (l.route_decision === "knowledge_base_rag") routeStyle = "background:rgba(99,102,241,0.1);color:#a5b4fc;";
+    if (l.route_decision === "conversational") routeStyle = "background:rgba(245,158,11,0.1);color:var(--amber);";
+
+    return `
+    <tr>
+      <td><span style="font-size:11px;color:var(--text3);">${timeStr}</span></td>
+      <td>
+        <div style="font-size:13px;font-weight:500;color:var(--text);">${l.user_query}</div>
+      </td>
+      <td>
+        <div style="max-height: 60px; overflow-y: auto; font-size:12px; color:var(--text2); line-height: 1.4; padding-right: 8px;">
+          ${l.bot_response}
+        </div>
+      </td>
+      <td>
+        <span style="${routeStyle}padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;">
+          ${l.route_decision}
+        </span>
+      </td>
+    </tr>
+  `}).join('');
+}
+
+// ── Auth helpers ──────────────────────────────────────────
+async function authFetch(url, opts={}) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    toast('Session expired. Redirecting to login…', 'error');
+    setTimeout(() => window.location.href = '/admin-login', 1500);
+    throw new Error('Unauthorized');
+  }
+  return res;
+}
+
+async function logout() {
+  await fetch('/api/admin/logout', { method: 'POST' });
+  window.location.href = '/admin-login';
+}
+
+// ── Init ──────────────────────────────────────────────────
+async function init() {
+  // Verify session is still valid
+  try {
+    const res = await fetch('/api/admin/me');
+    if (!res.ok) { window.location.href = '/admin-login'; return; }
+  } catch {
+    window.location.href = '/admin-login'; return;
+  }
+  loadProducts();
+  loadKnowledge();
+  loadChatLogs();
+}
+
+init();
+</script>
+</body>
+</html>

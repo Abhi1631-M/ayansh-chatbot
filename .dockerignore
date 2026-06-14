@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Environment variables
+.env
+.env.local
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python environments
+venv/
+env/
+.venv/
+
+# Pytest and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Database files
+# Exclude local database copies so the cloud instance starts fresh
+database/*.sqlite
+database/chroma_data/
+
+# OS generated files
+.DS_Store
+Thumbs.db

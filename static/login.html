@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin Login — Ayansh Infocom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --bg:#0a0e1a;--bg2:#111827;--bg3:#1a2236;
+      --glass:rgba(17,24,39,0.8);
+      --border:rgba(99,128,255,0.18);--border2:rgba(255,255,255,0.06);
+      --accent:#6366f1;--accent2:#8b5cf6;
+      --grad:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);
+      --glow:rgba(99,102,241,0.3);
+      --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+      --red:#ef4444;--green:#22c55e;
+      --r-sm:8px;--r-md:14px;--r-lg:20px;
+      --shadow:0 24px 80px rgba(0,0,0,0.5);
+      --t:0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html,body{height:100%;background:var(--bg);color:var(--text);
+      font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+
+    /* ── Animated bg ───────────────────────────────── */
+    .blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0;}
+    .b1{width:600px;height:600px;top:-200px;right:-150px;
+      background:radial-gradient(circle,rgba(99,102,241,0.1),transparent 70%);
+      animation:bm 22s ease-in-out infinite;}
+    .b2{width:500px;height:500px;bottom:-180px;left:-120px;
+      background:radial-gradient(circle,rgba(139,92,246,0.08),transparent 70%);
+      animation:bm 28s ease-in-out infinite reverse;}
+    .b3{width:300px;height:300px;top:50%;left:50%;transform:translate(-50%,-50%);
+      background:radial-gradient(circle,rgba(168,85,247,0.05),transparent 70%);
+      animation:bm 18s ease-in-out infinite 5s;}
+    @keyframes bm{
+      0%,100%{transform:translate(0,0);}
+      33%{transform:translate(25px,-25px);}
+      66%{transform:translate(-18px,18px);}
+    }
+    .b3{animation:bm3 18s ease-in-out infinite 5s;}
+    @keyframes bm3{
+      0%,100%{transform:translate(-50%,-50%);}
+      33%{transform:translate(calc(-50% + 20px),calc(-50% - 20px));}
+      66%{transform:translate(calc(-50% - 15px),calc(-50% + 15px));}
+    }
+
+    /* ── Grid lines decoration ─────────────────────── */
+    .grid-overlay{
+      position:fixed;inset:0;z-index:0;pointer-events:none;
+      background-image:
+        linear-gradient(rgba(99,102,241,0.03) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(99,102,241,0.03) 1px,transparent 1px);
+      background-size:60px 60px;
+    }
+
+    /* ── Page layout ───────────────────────────────── */
+    .page{
+      position:relative;z-index:1;
+      min-height:100vh;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:24px;
+    }
+
+    /* ── Login card ────────────────────────────────── */
+    .card{
+      width:100%;max-width:420px;
+      background:var(--glass);backdrop-filter:blur(24px);
+      -webkit-backdrop-filter:blur(24px);
+      border:1px solid var(--border);border-radius:var(--r-lg);
+      box-shadow:var(--shadow),0 0 60px rgba(99,102,241,0.08);
+      animation:card-in .5s cubic-bezier(0.34,1.56,0.64,1);
+      overflow:hidden;
+    }
+    @keyframes card-in{from{opacity:0;transform:translateY(30px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+    /* top accent bar */
+    .card-top{height:3px;background:var(--grad);}
+
+    .card-body{padding:40px 36px 36px;}
+
+    /* ── Logo / Brand ──────────────────────────────── */
+    .brand{text-align:center;margin-bottom:32px;}
+    .brand-icon{
+      width:64px;height:64px;border-radius:18px;
+      background:var(--grad);display:flex;align-items:center;
+      justify-content:center;font-size:28px;font-weight:700;
+      color:white;margin:0 auto 16px;
+      box-shadow:0 8px 32px var(--glow);
+    }
+    .brand-name{font-size:18px;font-weight:700;letter-spacing:-.02em;}
+    .brand-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+    .brand-badge{
+      display:inline-flex;align-items:center;gap:5px;
+      margin-top:10px;padding:4px 12px;border-radius:100px;
+      background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);
+      font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.04em;
+    }
+
+    /* ── Form ──────────────────────────────────────── */
+    .form{display:flex;flex-direction:column;gap:18px;}
+    .field{display:flex;flex-direction:column;gap:7px;}
+    label{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.03em;text-transform:uppercase;}
+
+    .input-wrap{position:relative;}
+    .input-icon{
+      position:absolute;left:14px;top:50%;transform:translateY(-50%);
+      font-size:16px;pointer-events:none;color:var(--text3);
+    }
+    input[type=text],input[type=password]{
+      width:100%;background:rgba(255,255,255,0.04);
+      border:1px solid var(--border2);color:var(--text);
+      border-radius:var(--r-md);padding:12px 14px 12px 42px;
+      font-size:14px;font-family:'Inter',sans-serif;
+      transition:border-color var(--t),box-shadow var(--t);
+    }
+    input:focus{outline:none;border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(99,102,241,0.12);}
+    input::placeholder{color:var(--text3);}
+
+    .eye-btn{
+      position:absolute;right:14px;top:50%;transform:translateY(-50%);
+      background:none;border:none;cursor:pointer;font-size:16px;
+      color:var(--text3);transition:color var(--t);padding:4px;
+    }
+    .eye-btn:hover{color:var(--text2);}
+
+    /* ── Error message ─────────────────────────────── */
+    .error-msg{
+      display:none;padding:12px 16px;border-radius:var(--r-sm);
+      background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);
+      color:#fca5a5;font-size:13px;font-weight:500;
+      animation:shake .4s ease-in-out;
+    }
+    .error-msg.show{display:flex;align-items:center;gap:8px;}
+    @keyframes shake{
+      0%,100%{transform:translateX(0);}
+      20%,60%{transform:translateX(-6px);}
+      40%,80%{transform:translateX(6px);}
+    }
+
+    /* ── Submit button ─────────────────────────────── */
+    .login-btn{
+      width:100%;padding:13px;border:none;border-radius:var(--r-md);
+      background:var(--grad);color:white;font-size:14px;font-weight:600;
+      font-family:'Inter',sans-serif;cursor:pointer;
+      box-shadow:0 6px 24px var(--glow);
+      transition:all var(--t);letter-spacing:.01em;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .login-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px var(--glow);}
+    .login-btn:active:not(:disabled){transform:translateY(0);}
+    .login-btn:disabled{opacity:0.6;cursor:not-allowed;}
+
+    /* ── Spinner ───────────────────────────────────── */
+    .spinner{
+      width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);
+      border-top-color:white;border-radius:50%;
+      animation:spin .7s linear infinite;display:none;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* ── Footer note ───────────────────────────────── */
+    .card-footer{
+      padding:16px 36px 28px;
+      text-align:center;font-size:11px;color:var(--text3);
+      border-top:1px solid var(--border2);
+    }
+    .lock-icon{font-size:14px;margin-right:4px;}
+  </style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<div class="grid-overlay"></div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-top"></div>
+    <div class="card-body">
+
+      <!-- Brand -->
+      <div class="brand">
+        <div class="brand-icon">A</div>
+        <div class="brand-name">Ayansh Infocom</div>
+        <div class="brand-sub">Private Limited</div>
+        <div class="brand-badge">🔐 Admin Portal</div>
+      </div>
+
+      <!-- Error -->
+      <div class="error-msg" id="error-msg">
+        <span>⚠️</span>
+        <span id="error-text">Invalid credentials. Please try again.</span>
+      </div>
+
+      <!-- Form -->
+      <form class="form" id="login-form" onsubmit="handleLogin(event)">
+        <div class="field">
+          <label>Username</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="username" placeholder="Enter username" autocomplete="username" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" required />
+            <button type="button" class="eye-btn" id="eye-btn" onclick="togglePwd()">👁</button>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn" id="login-btn">
+          <span id="btn-text">Sign In to Admin</span>
+          <div class="spinner" id="spinner"></div>
+        </button>
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <span class="lock-icon">🔒</span>
+      Restricted access — Ayansh Infocom staff only
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePwd() {
+    const inp = document.getElementById('password');
+    const btn = document.getElementById('eye-btn');
+    if (inp.type === 'password') { inp.type = 'text';     btn.textContent = '🙈'; }
+    else                         { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    document.getElementById('error-text').textContent = msg;
+    el.classList.remove('show');
+    void el.offsetWidth; // re-trigger animation
+    el.classList.add('show');
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) { showError('Please enter both username and password.'); return; }
+
+    // Show loading state
+    document.getElementById('login-btn').disabled  = true;
+    document.getElementById('btn-text').textContent = 'Signing in…';
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('error-msg').classList.remove('show');
+
+    try {
+      const res  = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        // Store token in sessionStorage
+        sessionStorage.setItem('admin_token', data.token);
+        // Redirect to admin panel
+        window.location.href = '/admin';
+      } else {
+        showError(data.detail || 'Invalid username or password.');
+      }
+    } catch {
+      showError('Server error. Please try again.');
+    } finally {
+      document.getElementById('login-btn').disabled   = false;
+      document.getElementById('btn-text').textContent  = 'Sign In to Admin';
+      document.getElementById('spinner').style.display = 'none';
+    }
+  }
+</script>
+</body>
+</html>

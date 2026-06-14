@@ -1,0 +1,13 @@
+# ──────────────────────────────────────────────
+# Ayansh Infotech Pvt. Ltd. — AI Chatbot Deps
+# ──────────────────────────────────────────────
+
+langchain>=0.3.0
+langgraph>=0.4.0
+langchain-groq>=0.3.0
+langchain-core>=0.3.0
+
+python-dotenv>=1.0.0
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+requests>=2.31.0

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ayansh Infotech Pvt. Ltd. - AI-powered customer support and sales chatbot for networking hardware and infrastructure products.">
+    <title>Ayansh Infotech | AI Sales Assistant</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127760;</text></svg>">
+</head>
+<body>
+
+    <!-- Animated background -->
+    <div class="bg-pattern"></div>
+
+    <div class="app-container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-logo">AI</div>
+            <div class="header-info">
+                <div class="header-title">Ayansh Infotech Pvt. Ltd.</div>
+                <div class="header-subtitle">AI Sales &amp; Support Assistant</div>
+            </div>
+            <div class="header-status">
+                <span class="status-dot"></span>
+                Online
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chatArea">
+
+            <!-- Welcome Card -->
+            <div class="welcome-card" id="welcomeCard">
+                <div class="welcome-icon">AI</div>
+                <h2>Welcome to Ayansh Infotech</h2>
+                <p>
+                    I'm your AI Sales &amp; Support assistant. Ask me about
+                    product specs, pricing, stock availability, shipping
+                    estimates, or any technical questions.
+                </p>
+                <div class="quick-actions">
+                    <button class="quick-chip" onclick="sendQuickMessage('Do you have the 42U server rack in stock?')">
+                        42U Rack Stock
+                    </button>
+                    <button class="quick-chip" onclick="sendQuickMessage('What is the price of the AX6000 router with tax for ZIP 10001?')">
+                        Router Pricing
+                    </button>
+                    <button class="quick-chip" onclick="sendQuickMessage('What are the dimensions and weight capacity of the server rack?')">
+                        Rack Specs
+                    </button>
+                    <button class="quick-chip" onclick="sendQuickMessage('What is your return policy?')">
+                        Return Policy
+                    </button>
+                    <button class="quick-chip" onclick="sendQuickMessage('Do you have any active discounts or offers?')">
+                        Active Offers
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea
+                    id="messageInput"
+                    placeholder="Ask about products, pricing, stock, specs..."
+                    rows="1"
+                    autocomplete="off"
+                ></textarea>
+                <button class="send-btn" id="sendBtn" title="Send message">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Powered by LangGraph &bull; Ayansh Infotech Pvt. Ltd.
+        </div>
+
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

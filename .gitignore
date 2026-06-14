@@ -1,0 +1,31 @@
+# Git
+.git
+
+# Environment variables (NEVER COMMIT THESE!)
+.env
+.env.local
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python environments
+venv/
+env/
+.venv/
+
+# Pytest and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Database files
+# Exclude local database copies so you don't overwrite production data
+database/*.sqlite
+database/chroma_data/
+
+# OS generated files
+.DS_Store
+Thumbs.db
