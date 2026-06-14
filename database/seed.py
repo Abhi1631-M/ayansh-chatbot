@@ -188,14 +188,17 @@ def seed_knowledge(conn) -> None:
         # -- Company Info
         {
             "category": "company_info",
-            "title":    "About Ayansh Infocom Private Limited",
+            "title":    "About Ayansh Infocom Private Limited & Contact Info",
             "content":  (
                 "Established in 2025, Ayansh Infocom Private Limited is a premier Trader and Retailer "
                 "of high-performance Network Switches, Mikrotik Routerboards, Server Racks, and Wireless Equipment. "
-                "Founded by Mr. Devendra Tripathi, we deliver reliable connectivity solutions for modern businesses "
-                "with crystal clear transparency in every transaction."
+                "Founded by Mr. Devendra Tripathi.\n\n"
+                "**Contact Information**\n"
+                "- **Address:** 301 Padama Place, Nehru Place\n"
+                "- **Phone:** +91 98996 81017\n"
+                "- **Email:** devendra@ayanshinfo.com"
             ),
-            "keywords": "ayansh,infocom,company,about,founder,devendra,tripathi,established,2025",
+            "keywords": "ayansh,infocom,company,about,founder,devendra,tripathi,contact,address,phone,email,location,nehru place",
         },
         {
             "category": "company_info",
