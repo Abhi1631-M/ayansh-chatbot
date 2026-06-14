@@ -21,8 +21,9 @@ pinned: false
 | 📦 **Real-time Inventory** | PostgreSQL-backed ERP API returns price, stock, tax (by ZIP), shipping dates, and promotional offers |
 | 📚 **RAG Knowledge Base** | ChromaDB semantic vector-store serves product specs, manuals, FAQs, and company policies |
 | 🤖 **AI Sales Assistant** | Powered by blazing-fast Groq Llama 3 models |
-| 📱 **WhatsApp Integration** | Webhook ready for direct Meta WhatsApp Business API integration |
-| 💻 **Web UI & Admin Portal** | Beautiful chat interface for customers and an Admin portal for adding products and viewing chat logs |
+| 🎯 **Automated Lead Generation** | AI naturally captures customer contact info & product interest during chat and saves it to a secure database |
+| 📱 **WhatsApp Integration** | Connect to Twilio to reply to customers directly on WhatsApp with persistent chat memory |
+| 💻 **Web UI & Admin Portal** | Beautiful chat interface for customers and an Admin portal for adding products, viewing chat logs, and tracking leads |
 
 ---
 
@@ -49,15 +50,10 @@ DATABASE_URL=postgresql://postgres.xxx:password@aws-1-ap-southeast-1.pooler.supa
 # Admin Portal Credentials
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_secure_password
-
-# WhatsApp API Configuration (Optional)
-WHATSAPP_ACCESS_TOKEN=your_meta_token
-WHATSAPP_PHONE_NUMBER_ID=your_phone_id
-WHATSAPP_VERIFY_TOKEN=your_custom_webhook_secret
 ```
 
 ### 3. Initialize Databases
-The database is hosted on Supabase. Run the seed script **ONCE locally** to populate it with the default products and knowledge base chunks.
+The database is hosted on Supabase. Run the seed script **ONCE locally** to populate it with the default products, tables, and knowledge base chunks.
 ```bash
 python -m database.seed
 ```
