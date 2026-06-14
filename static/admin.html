@@ -1038,22 +1038,17 @@ async function logout() {
 
 // ── Init ──────────────────────────────────────────────────
 async function init() {
+  // Verify session is still valid
   try {
     const res = await fetch('/api/admin/me');
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    document.getElementById('admin-name').textContent = data.user;
-    
-    // Load all data
-    await Promise.all([
-      loadProducts(),
-      loadKnowledge(),
-      loadChatLogs(),
-      loadLeads()
-    ]);
-  } catch (err) {
-    window.location.href = '/admin-login';
+    if (!res.ok) { window.location.href = '/admin-login'; return; }
+  } catch {
+    window.location.href = '/admin-login'; return;
   }
+  loadProducts();
+  loadKnowledge();
+  loadChatLogs();
+  loadLeads();
 }
 
 init();
