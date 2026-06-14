@@ -1,5 +1,14 @@
-# 🌐 Ayansh Infotech Pvt. Ltd. — AI Customer Support & Sales Chatbot
+---
+title: Ayansh Chatbot
+emoji: 🤖
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
 
+# 🌐 Ayansh Infotech Pvt. Ltd. — AI Customer Support & Sales Chatbot
 > **Intelligent, graph-based chatbot** for networking hardware e-commerce — powered by **LangGraph**, **LangChain**, **FastAPI**, and **ChromaDB**.
 
 ---
