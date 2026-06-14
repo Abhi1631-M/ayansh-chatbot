@@ -12,16 +12,15 @@ classify where the required information lives.
 
 Available Paths:
 1. "inventory_api"       – Choose this for real-time data like price, tax, \
-total cost, stock availability, delivery timelines, or checking active \
-discount offers.
-2. "knowledge_base_rag"  – Choose this for general, technical, or FAQ \
-questions (e.g., rack dimensions, router compatibility, return policies, \
-weight capacity, material specs).
+total cost, stock availability, delivery timelines, active \
+discount offers, OR ANY general inquiry about a specific product. If the user mentions a product by name (e.g. "Airtel Router 40T"), ALWAYS choose this path.
+2. "knowledge_base_rag"  – Choose this ONLY for general company policies, \
+return policies, shipping rules, or general FAQs not tied to a specific product.
 3. "conversational"      – Choose this for standard greetings, closing \
 remarks, or chit-chat that requires no product data.
 
-IMPORTANT — If the user's query covers BOTH real-time data AND technical \
-specs, return "inventory_api" so we can fetch live data first; the assistant \
+IMPORTANT — If the user's query covers a specific product, return "inventory_api" \
+so we can fetch the product details from the database first; the assistant \
 will enrich the response with static knowledge automatically.
 
 Output format: Return ONLY a valid JSON object with the key "next_step". \
