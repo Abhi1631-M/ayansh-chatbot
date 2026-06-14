@@ -10,9 +10,9 @@ ENV PYTHONUNBUFFERED=1
 # Ensure sentence-transformers caches models inside the container
 ENV HF_HOME=/app/.cache/huggingface
 
-# Install system dependencies
+# Install system dependencies (libpq-dev needed for psycopg2)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc python3-dev \
+    && apt-get install -y --no-install-recommends gcc python3-dev libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
@@ -22,15 +22,14 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
-# Create the seed database and vectors during build (baked into image as a template)
-RUN python -m database.seed
-RUN python -m database.sync_vectors
-
-# Create persistent data directory (HF Spaces mounts /data for persistence)
-RUN mkdir -p /data
+# Pre-download the multilingual embedding model during build (saves startup time)
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
 
 # Expose the port Uvicorn will run on (Hugging Face Spaces requires 7860)
 EXPOSE 7860
 
-# Use entrypoint script to copy seed data to /data on first boot
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+# Use entrypoint script to seed Supabase DB and sync vectors on first boot
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+CMD ["/app/entrypoint.sh"]

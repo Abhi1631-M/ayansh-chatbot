@@ -127,11 +127,12 @@ async def chat_endpoint(request: Request):
         response_text = result.get("final_response", "Sorry, I couldn't generate a response.")
         route_taken = result.get("router_decision", "unknown")
 
-        # Async log to DB (or just blocking write since SQLite is fast)
+        # Log to Supabase PostgreSQL
         try:
             conn = get_connection()
-            conn.execute(
-                "INSERT INTO chat_logs (user_query, bot_response, route_decision) VALUES (?, ?, ?)",
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO chat_logs (user_query, bot_response, route_decision) VALUES (%s, %s, %s)",
                 (user_message, response_text, route_taken)
             )
             conn.commit()
@@ -203,8 +204,9 @@ async def handle_whatsapp_message(request: Request):
             # Log to DB
             try:
                 conn = get_connection()
-                conn.execute(
-                    "INSERT INTO chat_logs (user_query, bot_response, route_decision) VALUES (?, ?, ?)",
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO chat_logs (user_query, bot_response, route_decision) VALUES (%s, %s, %s)",
                     (text, response_text, f"WA: {route_taken}")
                 )
                 conn.commit()
@@ -312,13 +314,17 @@ async def admin_get_products():
     """Return all products with their offers."""
     conn = get_connection()
     try:
-        rows = conn.execute("SELECT * FROM products ORDER BY category, name").fetchall()
+        import psycopg2.extras
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM products ORDER BY category, name")
+        rows = cur.fetchall()
         products = []
         for row in rows:
             p = dict(row)
-            offer = conn.execute(
-                "SELECT * FROM offers WHERE product_id = ?", (p["product_id"],)
-            ).fetchone()
+            cur.execute(
+                "SELECT * FROM offers WHERE product_id = %s", (p["product_id"],)
+            )
+            offer = cur.fetchone()
             p["offer"] = dict(offer) if offer else None
             products.append(p)
         return JSONResponse(content={"products": products})
@@ -332,28 +338,29 @@ async def admin_add_product(product: ProductModel):
     
     # Auto-generate keywords separated by commas so the Chatbot can always find it!
     if not product.keywords:
-        # Extract unique words from name, brand, and category
         words = set(f"{product.name} {product.brand} {product.category}".lower().split())
         product.keywords = ",".join(words)
         
     conn = get_connection()
     try:
-        conn.execute(
+        cur = conn.cursor()
+        cur.execute(
             """
             INSERT INTO products
               (product_id, name, brand, category, unit_price_inr, stock_qty,
                warehouse, std_shipping_days, exp_shipping_days, exp_surcharge_inr,
                weight_kg, restock_date, alternative_product, keywords)
             VALUES
-              (:product_id, :name, :brand, :category, :unit_price_inr, :stock_qty,
-               :warehouse, :std_shipping_days, :exp_shipping_days, :exp_surcharge_inr,
-               :weight_kg, :restock_date, :alternative_product, :keywords)
+              (%(product_id)s, %(name)s, %(brand)s, %(category)s, %(unit_price_inr)s, %(stock_qty)s,
+               %(warehouse)s, %(std_shipping_days)s, %(exp_shipping_days)s, %(exp_surcharge_inr)s,
+               %(weight_kg)s, %(restock_date)s, %(alternative_product)s, %(keywords)s)
             """,
             product.model_dump(),
         )
         conn.commit()
         return JSONResponse(content={"status": "ok", "message": "Product added."})
     except Exception as e:
+        conn.rollback()
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         conn.close()
@@ -366,21 +373,23 @@ async def admin_update_product(product_id: str, product: ProductModel):
     try:
         data = product.model_dump()
         data["_id"] = product_id
-        conn.execute(
+        cur = conn.cursor()
+        cur.execute(
             """
             UPDATE products SET
-              name=:name, brand=:brand, category=:category, unit_price_inr=:unit_price_inr,
-              stock_qty=:stock_qty, warehouse=:warehouse, std_shipping_days=:std_shipping_days,
-              exp_shipping_days=:exp_shipping_days, exp_surcharge_inr=:exp_surcharge_inr,
-              weight_kg=:weight_kg, restock_date=:restock_date,
-              alternative_product=:alternative_product, keywords=:keywords
-            WHERE product_id=:_id
+              name=%(name)s, brand=%(brand)s, category=%(category)s, unit_price_inr=%(unit_price_inr)s,
+              stock_qty=%(stock_qty)s, warehouse=%(warehouse)s, std_shipping_days=%(std_shipping_days)s,
+              exp_shipping_days=%(exp_shipping_days)s, exp_surcharge_inr=%(exp_surcharge_inr)s,
+              weight_kg=%(weight_kg)s, restock_date=%(restock_date)s,
+              alternative_product=%(alternative_product)s, keywords=%(keywords)s
+            WHERE product_id=%(_id)s
             """,
             data,
         )
         conn.commit()
         return JSONResponse(content={"status": "ok", "message": "Product updated."})
     except Exception as e:
+        conn.rollback()
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         conn.close()
@@ -391,8 +400,9 @@ async def admin_delete_product(product_id: str):
     """Delete a product and its offer."""
     conn = get_connection()
     try:
-        conn.execute("DELETE FROM offers WHERE product_id = ?", (product_id,))
-        conn.execute("DELETE FROM products WHERE product_id = ?", (product_id,))
+        cur = conn.cursor()
+        cur.execute("DELETE FROM offers WHERE product_id = %s", (product_id,))
+        cur.execute("DELETE FROM products WHERE product_id = %s", (product_id,))
         conn.commit()
         return JSONResponse(content={"status": "ok", "message": "Product deleted."})
     finally:
@@ -406,9 +416,10 @@ async def admin_set_offer(product_id: str, offer: OfferModel):
     """Add or replace the offer for a product."""
     conn = get_connection()
     try:
-        conn.execute("DELETE FROM offers WHERE product_id = ?", (product_id,))
-        conn.execute(
-            "INSERT INTO offers (product_id, code, description, discount_pct, valid_until) VALUES (?,?,?,?,?)",
+        cur = conn.cursor()
+        cur.execute("DELETE FROM offers WHERE product_id = %s", (product_id,))
+        cur.execute(
+            "INSERT INTO offers (product_id, code, description, discount_pct, valid_until) VALUES (%s,%s,%s,%s,%s)",
             (product_id, offer.code, offer.description, offer.discount_pct, offer.valid_until),
         )
         conn.commit()
@@ -422,7 +433,8 @@ async def admin_delete_offer(product_id: str):
     """Remove the offer from a product."""
     conn = get_connection()
     try:
-        conn.execute("DELETE FROM offers WHERE product_id = ?", (product_id,))
+        cur = conn.cursor()
+        cur.execute("DELETE FROM offers WHERE product_id = %s", (product_id,))
         conn.commit()
         return JSONResponse(content={"status": "ok", "message": "Offer removed."})
     finally:
@@ -438,8 +450,10 @@ async def admin_get_knowledge():
     """Return all knowledge chunks."""
     conn = get_connection()
     try:
-        rows = conn.execute("SELECT * FROM knowledge_chunks ORDER BY category, id").fetchall()
-        return JSONResponse(content={"chunks": [dict(r) for r in rows]})
+        import psycopg2.extras
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM knowledge_chunks ORDER BY category, id")
+        return JSONResponse(content={"chunks": [dict(r) for r in cur.fetchall()]})
     finally:
         conn.close()
 
@@ -449,15 +463,17 @@ async def admin_add_knowledge(chunk: KnowledgeModel):
     """Add a new knowledge chunk."""
     conn = get_connection()
     try:
-        cursor = conn.execute(
-            "INSERT INTO knowledge_chunks (category, title, content, keywords) VALUES (?,?,?,?)",
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO knowledge_chunks (category, title, content, keywords) VALUES (%s,%s,%s,%s) RETURNING id",
             (chunk.category, chunk.title, chunk.content, chunk.keywords),
         )
+        new_id = cur.fetchone()[0]
         conn.commit()
         
         from database.vector_db import upsert_knowledge_chunk
         upsert_knowledge_chunk(
-            chunk_id=cursor.lastrowid, 
+            chunk_id=new_id, 
             title=chunk.title, 
             content=chunk.content, 
             category=chunk.category
@@ -473,8 +489,9 @@ async def admin_update_knowledge(chunk_id: int, chunk: KnowledgeModel):
     """Update a knowledge chunk."""
     conn = get_connection()
     try:
-        conn.execute(
-            "UPDATE knowledge_chunks SET category=?, title=?, content=?, keywords=? WHERE id=?",
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE knowledge_chunks SET category=%s, title=%s, content=%s, keywords=%s WHERE id=%s",
             (chunk.category, chunk.title, chunk.content, chunk.keywords, chunk_id),
         )
         conn.commit()
@@ -497,7 +514,8 @@ async def admin_delete_knowledge(chunk_id: int):
     """Delete a knowledge chunk."""
     conn = get_connection()
     try:
-        conn.execute("DELETE FROM knowledge_chunks WHERE id = ?", (chunk_id,))
+        cur = conn.cursor()
+        cur.execute("DELETE FROM knowledge_chunks WHERE id = %s", (chunk_id,))
         conn.commit()
         
         from database.vector_db import delete_knowledge_chunk
@@ -517,11 +535,20 @@ async def admin_get_chat_logs(limit: int = 100):
     """Return recent chat interactions."""
     conn = get_connection()
     try:
-        rows = conn.execute(
-            "SELECT * FROM chat_logs ORDER BY timestamp DESC LIMIT ?", 
+        import psycopg2.extras
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(
+            "SELECT * FROM chat_logs ORDER BY timestamp DESC LIMIT %s", 
             (limit,)
-        ).fetchall()
-        return JSONResponse(content={"logs": [dict(r) for r in rows]})
+        )
+        logs = []
+        for r in cur.fetchall():
+            d = dict(r)
+            # Convert timestamp to string for JSON serialization
+            if d.get('timestamp'):
+                d['timestamp'] = str(d['timestamp'])
+            logs.append(d)
+        return JSONResponse(content={"logs": logs})
     finally:
         conn.close()
 
