@@ -134,3 +134,32 @@ def get_all_products() -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
     finally:
         conn.close()
+
+
+def save_lead(customer_name: str, contact_info: str, product_interest: str) -> bool:
+    """Save a captured lead into the PostgreSQL database."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO leads (customer_name, contact_info, product_interest) VALUES (%s, %s, %s)",
+            (customer_name, contact_info, product_interest)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error saving lead: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def get_all_leads() -> list[dict]:
+    """Fetch all leads for the Admin portal."""
+    conn = get_connection()
+    try:
+        cur = _dict_cursor(conn)
+        cur.execute("SELECT id, customer_name, contact_info, product_interest, status, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at FROM leads ORDER BY created_at DESC")
+        return [dict(row) for row in cur.fetchall()]
+    finally:
+        conn.close()

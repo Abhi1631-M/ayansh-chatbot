@@ -2,6 +2,16 @@
 -- Ayansh Infocom Private Limited — PostgreSQL Schema (Supabase)
 -- ============================================================
 
+-- Leads Table (Lead Generation & Sales)
+CREATE TABLE IF NOT EXISTS leads (
+    id SERIAL PRIMARY KEY,
+    customer_name TEXT NOT NULL,
+    contact_info TEXT NOT NULL,
+    product_interest TEXT NOT NULL,
+    status TEXT DEFAULT 'New',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Products Table
 CREATE TABLE IF NOT EXISTS products (
     id                    SERIAL PRIMARY KEY,

@@ -8,6 +8,7 @@ const sendBtn     = document.getElementById('sendBtn');
 const welcomeCard = document.getElementById('welcomeCard');
 
 let isWaiting = false;
+let chatHistory = [];
 
 /* ── Auto-resize textarea ──────────────────────────────── */
 messageInput.addEventListener('input', () => {
@@ -153,11 +154,14 @@ async function sendMessage() {
     // Show typing
     showTyping();
 
+    // Add to history
+    chatHistory.push({ role: 'user', content: text });
+
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text }),
+            body: JSON.stringify({ message: text, history: chatHistory }),
         });
 
         const data = await response.json();
@@ -168,6 +172,12 @@ async function sendMessage() {
             addMessage(`Sorry, something went wrong: ${data.error}`, 'bot');
         } else {
             addMessage(data.response, 'bot', data.route);
+            chatHistory.push({ role: 'assistant', content: data.response });
+            
+            // Keep history trimmed to last 10 messages (5 pairs)
+            if (chatHistory.length > 10) {
+                chatHistory.splice(0, chatHistory.length - 10);
+            }
         }
 
     } catch (err) {

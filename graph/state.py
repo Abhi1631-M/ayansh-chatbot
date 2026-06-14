@@ -1,39 +1,37 @@
 """
-Graph State Definition
-======================
-Defines the TypedDict that flows through every node in the
-LangGraph StateGraph.
+Chatbot State Definition
+========================
+Defines the schema for the LangGraph state. All nodes in
+the graph read from and write to this dictionary.
 """
-
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ChatbotState(TypedDict):
     """
-    Shared state carried across all nodes in the graph.
-
-    Attributes
-    ----------
+    State shared across all nodes in the AI graph.
+    
+    Fields
+    ------
     user_input : str
-        The raw question / message from the customer.
-
-    retrieved_context : str
-        Aggregated context returned by tool nodes (inventory JSON
-        and/or RAG text chunks). Starts empty and is populated by
-        the tool nodes before the assistant sees it.
+        The natural language input from the user for the current turn.
+        
+    chat_history : list[dict]
+        The conversation history, formatted as [{"role": "user", "content": "..."}, ...].
 
     router_decision : str
-        The routing label produced by the Router Node.
-        One of: "inventory_api" | "knowledge_base_rag" | "conversational".
-
+        The router's decision ("inventory_api", "knowledge_base_rag", etc.)
+        
+    retrieved_context : str
+        A dump of data retrieved by the chosen tool.
+        
     final_response : str
-        The polished, customer-facing answer produced by the
-        Assistant Node.
+        The polished, customer-facing answer produced by the Assistant Node.
     """
 
     user_input: str
-    retrieved_context: str
+    chat_history: list[dict]
     router_decision: str
+    retrieved_context: str
     final_response: str

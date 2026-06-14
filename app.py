@@ -109,6 +109,7 @@ async def chat_endpoint(request: Request):
     """Process a chat message through the LangGraph pipeline."""
     body = await request.json()
     user_message = body.get("message", "").strip()
+    chat_history = body.get("history", [])
 
     if not user_message:
         return JSONResponse(
@@ -119,6 +120,7 @@ async def chat_endpoint(request: Request):
     try:
         result = chatbot_graph.invoke({
             "user_input": user_message,
+            "chat_history": chat_history,
             "retrieved_context": "",
             "router_decision": "",
             "final_response": "",
@@ -126,6 +128,25 @@ async def chat_endpoint(request: Request):
 
         response_text = result.get("final_response", "Sorry, I couldn't generate a response.")
         route_taken = result.get("router_decision", "unknown")
+
+        # Intercept Lead Capture JSON
+        import re
+        from database.db import save_lead
+        
+        lead_match = re.search(r"\[LEAD_CAPTURE\](.*?)\[/LEAD_CAPTURE\]", response_text, re.DOTALL)
+        if lead_match:
+            try:
+                import json
+                lead_data = json.loads(lead_match.group(1).strip())
+                save_lead(
+                    customer_name=lead_data.get("name", "Unknown"),
+                    contact_info=lead_data.get("phone", "Unknown"),
+                    product_interest=lead_data.get("product", "Unknown")
+                )
+                # Remove the block from the user's visible text
+                response_text = re.sub(r"\[LEAD_CAPTURE\].*?\[/LEAD_CAPTURE\]", "", response_text, flags=re.DOTALL).strip()
+            except Exception as e:
+                print(f"Error parsing lead capture data: {e}")
 
         # Log to Supabase PostgreSQL
         try:
@@ -263,6 +284,29 @@ async def admin_logout(request: Request):
     response = JSONResponse(content={"status": "ok", "message": "Logged out."})
     response.delete_cookie("admin_token")
     return response
+
+
+@app.get("/api/admin/chat-logs")
+async def get_chat_logs(request: Request):
+    """Return recent chat logs for the admin panel."""
+    token = request.cookies.get("admin_token")
+    if not _validate_token(token):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    
+    from database.db import get_chat_logs as db_get_chat_logs
+    logs = db_get_chat_logs(limit=50)
+    return {"logs": logs}
+
+@app.get("/api/admin/leads")
+async def get_leads_api(request: Request):
+    """Return all captured leads for the admin panel."""
+    token = request.cookies.get("admin_token")
+    if not _validate_token(token):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    
+    from database.db import get_all_leads
+    leads = get_all_leads()
+    return {"leads": leads}
 
 
 @app.get("/api/admin/me")

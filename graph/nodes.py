@@ -165,10 +165,19 @@ def assistant_node(state: ChatbotState) -> dict[str, Any]:
         user_input=state["user_input"],
     )
 
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=state["user_input"]),
-    ]
+    messages = [SystemMessage(content=system_prompt)]
+    
+    from langchain_core.messages import AIMessage
+    
+    # Append chat history
+    for msg in state.get("chat_history", []):
+        if msg["role"] == "user":
+            messages.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            messages.append(AIMessage(content=msg["content"]))
+
+    # Append current user input
+    messages.append(HumanMessage(content=state["user_input"]))
 
     response = invoke_with_retry(llm, messages)
     answer = response.content.strip()

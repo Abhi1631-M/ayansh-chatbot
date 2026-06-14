@@ -290,6 +290,10 @@
     <div class="nav-item" onclick="showSection('logs',this)" id="nav-logs">
       <span class="icon">📊</span> Chat Logs
     </div>
+    <div class="nav-section">Sales</div>
+    <div class="nav-item" onclick="showSection('leads',this)" id="nav-leads">
+      <span class="icon">🎯</span> Leads & Orders
+    </div>
 
     <div class="sidebar-footer">
       <a class="chat-link" href="/">
@@ -361,6 +365,38 @@
             </thead>
             <tbody id="products-tbody">
               <tr><td colspan="6"><div class="empty"><div class="spinner"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LEADS SECTION ────────────────────────────── -->
+    <div class="section" id="section-leads">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Leads & Orders</div>
+          <div class="page-sub">View customer inquiries captured by the AI Assistant</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Captured Leads</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadLeads()">⟳ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Customer Name</th>
+                <th>Contact Info</th>
+                <th>Product Interest</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="leads-tbody">
+              <tr><td colspan="5"><div class="empty"><div class="spinner"></div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -944,6 +980,46 @@ async function loadChatLogs() {
   `}).join('');
 }
 
+// ══════════════════════════════════════════════════════════
+//  LEADS & ORDERS
+// ══════════════════════════════════════════════════════════
+
+async function loadLeads() {
+  const res  = await authFetch('/api/admin/leads');
+  const data = await res.json();
+  const leads = data.leads || [];
+
+  const tbody = document.getElementById('leads-tbody');
+  if (!leads.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🎯</div><p>No leads captured yet.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = leads.map(l => {
+    let statusStyle = "background:rgba(245,158,11,0.1);color:var(--amber);";
+    if (l.status === "Contacted") statusStyle = "background:rgba(34,197,94,0.1);color:var(--green);";
+
+    return `
+    <tr>
+      <td><span style="font-size:11px;color:var(--text3);">${l.created_at}</span></td>
+      <td>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">${l.customer_name}</div>
+      </td>
+      <td>
+        <div style="font-size:13px;color:var(--text2);">${l.contact_info}</div>
+      </td>
+      <td>
+        <div style="font-size:13px;color:var(--accent);font-weight:500;">${l.product_interest}</div>
+      </td>
+      <td>
+        <span style="${statusStyle}padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;">
+          ${l.status || 'New'}
+        </span>
+      </td>
+    </tr>
+  `}).join('');
+}
+
 // ── Auth helpers ──────────────────────────────────────────
 async function authFetch(url, opts={}) {
   const res = await fetch(url, opts);
@@ -962,16 +1038,22 @@ async function logout() {
 
 // ── Init ──────────────────────────────────────────────────
 async function init() {
-  // Verify session is still valid
   try {
     const res = await fetch('/api/admin/me');
-    if (!res.ok) { window.location.href = '/admin-login'; return; }
-  } catch {
-    window.location.href = '/admin-login'; return;
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    document.getElementById('admin-name').textContent = data.user;
+    
+    // Load all data
+    await Promise.all([
+      loadProducts(),
+      loadKnowledge(),
+      loadChatLogs(),
+      loadLeads()
+    ]);
+  } catch (err) {
+    window.location.href = '/admin-login';
   }
-  loadProducts();
-  loadKnowledge();
-  loadChatLogs();
 }
 
 init();
