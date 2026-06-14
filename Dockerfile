@@ -25,7 +25,7 @@ COPY . .
 # Initialize the databases during the build phase
 # This bakes the default products and the language model into the Docker image,
 # so it works immediately on cloud platforms without Persistent Disks.
-RUN python -m database.init_db
+RUN python -m database.seed
 RUN python -m database.sync_vectors
 
 # Expose the port Uvicorn will run on
