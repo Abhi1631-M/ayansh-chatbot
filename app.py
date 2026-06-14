@@ -330,9 +330,11 @@ async def admin_get_products():
 async def admin_add_product(product: ProductModel):
     """Add a new product."""
     
-    # Auto-generate keywords so the Chatbot can always find it!
+    # Auto-generate keywords separated by commas so the Chatbot can always find it!
     if not product.keywords:
-        product.keywords = f"{product.name} {product.brand} {product.category}".lower()
+        # Extract unique words from name, brand, and category
+        words = set(f"{product.name} {product.brand} {product.category}".lower().split())
+        product.keywords = ",".join(words)
         
     conn = get_connection()
     try:
