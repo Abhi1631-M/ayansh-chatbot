@@ -3,13 +3,10 @@ set -e
 
 echo "  [BOOT] Ayansh Infocom Chatbot — Starting..."
 
-# Seed the Supabase database (safe to re-run — it replaces data)
-echo "  [BOOT] Seeding Supabase PostgreSQL database..."
-python -m database.seed
-
 # Sync knowledge chunks to ChromaDB vector store
-echo "  [BOOT] Syncing vectors..."
-python -m database.sync_vectors
+# (reads from Supabase and builds local vector index)
+echo "  [BOOT] Syncing vectors from Supabase..."
+python -m database.sync_vectors || echo "  [WARN] Vector sync failed — will retry on next boot"
 
 # Start the FastAPI server
 echo "  [BOOT] Starting Uvicorn on port 7860..."
