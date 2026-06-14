@@ -65,23 +65,37 @@ def query_product(user_query: str) -> dict | None:
         cur.execute("SELECT * FROM products")
         rows = cur.fetchall()
 
-        matched_product = None
-        for row in rows:
-            if _match_keywords(user_query, row.get("keywords") or ""):
-                matched_product = dict(row)
-                break
+        best_product = None
+        best_score = 0
+        
+        query_lower = user_query.lower()
 
-        if matched_product is None:
+        for row in rows:
+            keywords_csv = row.get("keywords") or ""
+            score = 0
+            
+            # Count how many of this product's keywords appear in the user's query
+            for kw in keywords_csv.split(","):
+                kw = kw.strip()
+                if kw and kw in query_lower:
+                    # Give higher weight to longer keywords (e.g. "airtel router" > "router")
+                    score += len(kw)
+                    
+            if score > best_score:
+                best_score = score
+                best_product = dict(row)
+
+        if best_product is None:
             return None
 
         # Fetch offer for this product
         cur.execute(
             "SELECT * FROM offers WHERE product_id = %s",
-            (matched_product["product_id"],)
+            (best_product["product_id"],)
         )
         offer_row = cur.fetchone()
-        matched_product["offer"] = dict(offer_row) if offer_row else None
-        return matched_product
+        best_product["offer"] = dict(offer_row) if offer_row else None
+        return best_product
 
     finally:
         conn.close()
