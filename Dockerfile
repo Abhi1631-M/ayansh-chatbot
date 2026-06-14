@@ -28,8 +28,8 @@ COPY . .
 RUN python -m database.seed
 RUN python -m database.sync_vectors
 
-# Expose the port Uvicorn will run on
-EXPOSE 8000
+# Expose the port Uvicorn will run on (Hugging Face Spaces requires 7860)
+EXPOSE 7860
 
 # Start the FastAPI application
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]

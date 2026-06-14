@@ -14,8 +14,8 @@ _CHROMA_DIR = Path(__file__).resolve().parent / "chroma_data"
 # Create a persistent client that stores vectors to disk
 _client = chromadb.PersistentClient(path=str(_CHROMA_DIR))
 
-# Use explicit sentence-transformers for English embeddings (smaller 90MB model fits in Render free tier)
-_embed_func = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+# Use Chroma's default ONNX embedding which requires NO PyTorch and saves 1.5GB of disk space / 300MB RAM!
+_embed_func = embedding_functions.DefaultEmbeddingFunction()
 
 # Get or create the collection for our knowledge chunks
 _collection = _client.get_or_create_collection(
