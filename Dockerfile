@@ -22,14 +22,15 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
-# Initialize the databases during the build phase
-# This bakes the default products and the language model into the Docker image,
-# so it works immediately on cloud platforms without Persistent Disks.
+# Create the seed database and vectors during build (baked into image as a template)
 RUN python -m database.seed
 RUN python -m database.sync_vectors
+
+# Create persistent data directory (HF Spaces mounts /data for persistence)
+RUN mkdir -p /data
 
 # Expose the port Uvicorn will run on (Hugging Face Spaces requires 7860)
 EXPOSE 7860
 
-# Start the FastAPI application
+# Use entrypoint script to copy seed data to /data on first boot
 CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]

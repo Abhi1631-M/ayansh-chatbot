@@ -4,6 +4,9 @@ Database Helper Module
 Provides connection and query utilities for the Ayansh Infocom
 SQLite database (ayansh.db).
 
+On Hugging Face Spaces, data is stored in /data for persistence
+across restarts. On first boot, the seed database is copied there.
+
 Usage
 -----
 from database.db import query_product, query_knowledge
@@ -11,11 +14,30 @@ from database.db import query_product, query_knowledge
 
 from __future__ import annotations
 
+import os
+import shutil
 import sqlite3
 from pathlib import Path
 
-# Resolve path to the database file (same directory as this file)
-_DB_PATH = Path(__file__).resolve().parent / "ayansh.db"
+# ── Resolve database paths ─────────────────────────────────────
+# The seed database is baked into the Docker image at build time
+_SEED_DB_PATH = Path(__file__).resolve().parent / "ayansh.db"
+
+# For persistence, we prefer /data (HF Spaces persistent volume)
+_PERSISTENT_DIR = Path("/data")
+
+if _PERSISTENT_DIR.exists() and os.access(str(_PERSISTENT_DIR), os.W_OK):
+    _DB_PATH = _PERSISTENT_DIR / "ayansh.db"
+    # On first boot, copy the seed DB to persistent storage
+    if not _DB_PATH.exists():
+        shutil.copy2(str(_SEED_DB_PATH), str(_DB_PATH))
+        print(f"  [PERSIST] Copied seed DB to {_DB_PATH}")
+    else:
+        print(f"  [PERSIST] Using existing persistent DB at {_DB_PATH}")
+else:
+    # Local development or no persistent volume — use the original path
+    _DB_PATH = _SEED_DB_PATH
+    print(f"  [LOCAL] Using local DB at {_DB_PATH}")
 
 
 def get_connection() -> sqlite3.Connection:

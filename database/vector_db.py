@@ -3,13 +3,36 @@ Vector Database Logic for Ayansh Infocom
 =========================================
 Handles initializing the ChromaDB persistent client, creating
 the knowledge collection, and running semantic vector searches.
+
+On Hugging Face Spaces, ChromaDB data is stored in /data for
+persistence across restarts. On first boot, the seed vectors
+are copied there automatically.
 """
+import os
+import shutil
 from pathlib import Path
 import chromadb
 from chromadb.utils import embedding_functions
 
-# Keep the chroma data locally in the database folder
-_CHROMA_DIR = Path(__file__).resolve().parent / "chroma_data"
+# ── Resolve ChromaDB paths ─────────────────────────────────────
+# The seed vectors are baked into the Docker image at build time
+_SEED_CHROMA_DIR = Path(__file__).resolve().parent / "chroma_data"
+
+# For persistence, we prefer /data (HF Spaces persistent volume)
+_PERSISTENT_DIR = Path("/data")
+
+if _PERSISTENT_DIR.exists() and os.access(str(_PERSISTENT_DIR), os.W_OK):
+    _CHROMA_DIR = _PERSISTENT_DIR / "chroma_data"
+    # On first boot, copy the seed vectors to persistent storage
+    if not _CHROMA_DIR.exists():
+        shutil.copytree(str(_SEED_CHROMA_DIR), str(_CHROMA_DIR))
+        print(f"  [PERSIST] Copied seed ChromaDB to {_CHROMA_DIR}")
+    else:
+        print(f"  [PERSIST] Using existing persistent ChromaDB at {_CHROMA_DIR}")
+else:
+    # Local development or no persistent volume — use the original path
+    _CHROMA_DIR = _SEED_CHROMA_DIR
+    print(f"  [LOCAL] Using local ChromaDB at {_CHROMA_DIR}")
 
 # Create a persistent client that stores vectors to disk
 _client = chromadb.PersistentClient(path=str(_CHROMA_DIR))
